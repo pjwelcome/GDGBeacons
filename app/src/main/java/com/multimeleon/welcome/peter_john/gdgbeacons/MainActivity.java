@@ -36,11 +36,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int PERMISSIONS_REQUEST_CODE = 1111;
-
-    private GoogleApiClient mGoogleApiClient;
-
-    private boolean mSubscribed = false;
     private static final String KEY_SUBSCRIBED = "subscribed";
+    private GoogleApiClient mGoogleApiClient;
+    private boolean mSubscribed = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,8 +71,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     protected void onPause() {
         super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
         if (mGoogleApiClient != null) {
-            unsubscribe();
+            unSubscribe();
         }
     }
 
@@ -213,7 +216,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 });
     }
 
-    private void unsubscribe() {
+    private void unSubscribe() {
         Nearby.Messages.unsubscribe(mGoogleApiClient, getPendingIntent());
     }
 
