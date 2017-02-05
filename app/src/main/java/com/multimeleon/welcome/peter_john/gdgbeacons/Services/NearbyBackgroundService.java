@@ -57,7 +57,6 @@ public class NearbyBackgroundService extends IntentService {
                 .setContentTitle(contentTitle)
                 .setContentText(contentText)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(contentText))
-                .setOngoing(true)
                 .setContentIntent(pi);
         notificationManager.notify(MESSAGES_NOTIFICATION_ID, notificationBuilder.build());
     }

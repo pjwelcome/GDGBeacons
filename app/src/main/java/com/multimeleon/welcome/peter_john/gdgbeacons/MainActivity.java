@@ -17,6 +17,9 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 
+import com.google.android.gms.awareness.Awareness;
+import com.google.android.gms.awareness.snapshot.BeaconStateResult;
+import com.google.android.gms.awareness.state.BeaconState;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
@@ -30,6 +33,9 @@ import com.google.android.gms.nearby.messages.NearbyPermissions;
 import com.google.android.gms.nearby.messages.Strategy;
 import com.google.android.gms.nearby.messages.SubscribeOptions;
 import com.multimeleon.welcome.peter_john.gdgbeacons.Services.NearbyBackgroundService;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks
         , GoogleApiClient.OnConnectionFailedListener {
@@ -56,7 +62,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         }
     }
 
-    private View getRootView(){
+    private View getRootView() {
         return getWindow().getDecorView().getRootView();
     }
 
@@ -89,16 +95,19 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        subscribe();
+        //subscribe();
+        getBeaconInformationWithAwarenessAPI();
     }
 
     @Override
     public void onConnectionSuspended(int i) {
     }
 
+
     private synchronized void buildGoogleApiClient() {
         if (mGoogleApiClient == null) {
             mGoogleApiClient = new GoogleApiClient.Builder(this)
+                    .addApi(Awareness.API)
                     .addApi(Nearby.MESSAGES_API, new MessagesOptions.Builder()
                             .setPermissions(NearbyPermissions.BLE).build())
                     .addConnectionCallbacks(this)
@@ -212,6 +221,38 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                                     NearbyMessagesStatusCodes.getStatusCodeString(
                                             status.getStatusCode()));
                         }
+                    }
+                });
+
+
+    }
+
+    private List<BeaconState.TypeFilter> setupAttachements() {
+        List<BeaconState.TypeFilter> BEACON_TYPE_FILTERS = Arrays.asList(
+                BeaconState.TypeFilter.with(
+                        getString(R.string.Namespace), getString(R.string.Type))
+        );
+        return BEACON_TYPE_FILTERS;
+    }
+
+    private void getBeaconInformationWithAwarenessAPI() {
+        if (!havePermissions()) {
+            Log.i(TAG, "Requesting permissions needed for this app.");
+            requestPermissions();
+        }
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions();
+        }
+        Awareness.SnapshotApi.getBeaconState(mGoogleApiClient, setupAttachements())
+                .setResultCallback(new ResultCallback<BeaconStateResult>() {
+                    @Override
+                    public void onResult(@NonNull BeaconStateResult beaconStateResult) {
+                        if (!beaconStateResult.getStatus().isSuccess()) {
+                            Log.e(TAG, "Could not get beacon state.");
+                            return;
+                        }
+                        BeaconState beaconState = beaconStateResult.getBeaconState();
+                        Log.i(TAG, new String(beaconState.getBeaconInfo().get(0).getContent()));
                     }
                 });
     }

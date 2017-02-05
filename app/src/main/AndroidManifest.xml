@@ -18,6 +18,16 @@
             </intent-filter>
         </activity>
 
+        <meta-data
+            android:name="com.google.android.awareness.API_KEY"
+            android:value="AIzaSyC4qdz6ostVI0aC5huBTsTSmX5JRV1I1_U" />
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyC4qdz6ostVI0aC5huBTsTSmX5JRV1I1_U" />
+        <meta-data
+            android:name="com.google.android.nearby.messages.API_KEY"
+            android:value="AIzaSyC4qdz6ostVI0aC5huBTsTSmX5JRV1I1_U" />
+
         <service
             android:name="com.multimeleon.welcome.peter_john.gdgbeacons.Services.NearbyBackgroundService"
             android:exported="false" />
