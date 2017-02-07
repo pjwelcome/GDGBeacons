@@ -71,6 +71,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         super.onResume();
         if (havePermissions()) {
             buildGoogleApiClient();
+
         }
     }
 
@@ -95,8 +96,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        //subscribe();
+        //  subscribe();
         getBeaconInformationWithAwarenessAPI();
+
     }
 
     @Override
@@ -113,6 +115,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     .addConnectionCallbacks(this)
                     .enableAutoManage(this, this)
                     .build();
+            mGoogleApiClient.connect();
         }
     }
 
@@ -228,11 +231,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     private List<BeaconState.TypeFilter> setupAttachements() {
-        List<BeaconState.TypeFilter> BEACON_TYPE_FILTERS = Arrays.asList(
+        return Arrays.asList(
                 BeaconState.TypeFilter.with(
                         getString(R.string.Namespace), getString(R.string.Type))
         );
-        return BEACON_TYPE_FILTERS;
     }
 
     private void getBeaconInformationWithAwarenessAPI() {
@@ -252,7 +254,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                             return;
                         }
                         BeaconState beaconState = beaconStateResult.getBeaconState();
-                        Log.i(TAG, new String(beaconState.getBeaconInfo().get(0).getContent()));
+                        List<BeaconState.BeaconInfo> beaconInfos = beaconState.getBeaconInfo();
+                        for (BeaconState.BeaconInfo beacon : beaconInfos) {
+                            Log.i(TAG, new String(beacon.getContent()));
+                        }
                     }
                 });
     }
