@@ -1,8 +1,10 @@
 package com.multimeleon.welcome.peter_john.gdgbeacons;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -22,8 +24,14 @@ import com.google.android.gms.awareness.snapshot.BeaconStateResult;
 import com.google.android.gms.awareness.state.BeaconState;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.nearby.Nearby;
 import com.google.android.gms.nearby.messages.Message;
 import com.google.android.gms.nearby.messages.MessageFilter;
@@ -38,11 +46,17 @@ import java.util.Arrays;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks
-        , GoogleApiClient.OnConnectionFailedListener {
+        , GoogleApiClient.OnConnectionFailedListener, ResultCallback<LocationSettingsResult> {
 
+    public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
+    public static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS =
+            UPDATE_INTERVAL_IN_MILLISECONDS / 2;
+    protected static final int REQUEST_CHECK_SETTINGS = 0x1;
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int PERMISSIONS_REQUEST_CODE = 1111;
     private static final String KEY_SUBSCRIBED = "subscribed";
+    protected LocationRequest mLocationRequest;
+    protected LocationSettingsRequest mLocationSettingsRequest;
     private GoogleApiClient mGoogleApiClient;
     private boolean mSubscribed = false;
 
@@ -110,13 +124,41 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         if (mGoogleApiClient == null) {
             mGoogleApiClient = new GoogleApiClient.Builder(this)
                     .addApi(Awareness.API)
+                    .addApi(LocationServices.API)
                     .addApi(Nearby.MESSAGES_API, new MessagesOptions.Builder()
                             .setPermissions(NearbyPermissions.BLE).build())
                     .addConnectionCallbacks(this)
                     .enableAutoManage(this, this)
                     .build();
             mGoogleApiClient.connect();
+            createLocationRequest();
+            buildLocationSettingsRequest();
+            checkLocationSettings();
         }
+    }
+
+    protected void createLocationRequest() {
+
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(UPDATE_INTERVAL_IN_MILLISECONDS);
+        mLocationRequest.setFastestInterval(FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+    }
+
+    protected void buildLocationSettingsRequest() {
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
+        builder.addLocationRequest(mLocationRequest);
+        mLocationSettingsRequest = builder.build();
+    }
+
+    protected void checkLocationSettings() {
+        PendingResult<LocationSettingsResult> result =
+                LocationServices.SettingsApi.checkLocationSettings(
+                        mGoogleApiClient,
+                        mLocationSettingsRequest
+                );
+        result.setResultCallback(this);
     }
 
     private boolean havePermissions() {
@@ -273,6 +315,39 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     "Exception while connecting to Google Play services: " +
                             connectionResult.getErrorMessage(),
                     Snackbar.LENGTH_INDEFINITE).show();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case REQUEST_CHECK_SETTINGS:
+                switch (resultCode) {
+                    case Activity.RESULT_OK:
+                        //start location updates
+                        break;
+                    case Activity.RESULT_CANCELED:
+                        break;
+                }
+                break;
+        }
+    }
+
+    @Override
+    public void onResult(@NonNull LocationSettingsResult locationSettingsResult) {
+        final Status status = locationSettingsResult.getStatus();
+        switch (status.getStatusCode()) {
+            case LocationSettingsStatusCodes.SUCCESS:
+                //start location updates
+                break;
+            case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                try {
+                    status.startResolutionForResult(MainActivity.this, REQUEST_CHECK_SETTINGS);
+                } catch (IntentSender.SendIntentException e) {
+                }
+                break;
+            case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                break;
         }
     }
 }
