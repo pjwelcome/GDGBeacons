@@ -3,6 +3,7 @@ package com.multimeleon.welcome.peter_john.gdgbeacons;
 import android.Manifest;
 import android.app.Activity;
 import android.app.PendingIntent;
+import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
@@ -51,6 +52,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     public static final long UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
     public static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS =
             UPDATE_INTERVAL_IN_MILLISECONDS / 2;
+    public static final int MY_BLUETOOTH_ENABLE_REQUEST_ID = 6;
     protected static final int REQUEST_CHECK_SETTINGS = 0x1;
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final int PERMISSIONS_REQUEST_CODE = 1111;
@@ -74,6 +76,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             Log.i(TAG, "Requesting permissions needed for this app.");
             requestPermissions();
         }
+        Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+        startActivityForResult(enableBtIntent, MY_BLUETOOTH_ENABLE_REQUEST_ID);
     }
 
     private View getRootView() {
@@ -110,9 +114,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        //  subscribe();
+        subscribe();
         getBeaconInformationWithAwarenessAPI();
-
     }
 
     @Override
@@ -131,9 +134,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     .enableAutoManage(this, this)
                     .build();
             mGoogleApiClient.connect();
-            createLocationRequest();
-            buildLocationSettingsRequest();
-            checkLocationSettings();
+
         }
     }
 
@@ -296,9 +297,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                             return;
                         }
                         BeaconState beaconState = beaconStateResult.getBeaconState();
-                        List<BeaconState.BeaconInfo> beaconInfos = beaconState.getBeaconInfo();
-                        for (BeaconState.BeaconInfo beacon : beaconInfos) {
-                            Log.i(TAG, new String(beacon.getContent()));
+                        if (beaconState != null) {
+                            List<BeaconState.BeaconInfo> beaconInfos = beaconState.getBeaconInfo();
+                            for (BeaconState.BeaconInfo beacon : beaconInfos) {
+                                Log.i(TAG, new String(beacon.getContent()));
+                            }
                         }
                     }
                 });
@@ -324,7 +327,18 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             case REQUEST_CHECK_SETTINGS:
                 switch (resultCode) {
                     case Activity.RESULT_OK:
-                        //start location updates
+                        getBeaconInformationWithAwarenessAPI();
+                        break;
+                    case Activity.RESULT_CANCELED:
+                        break;
+                }
+                break;
+            case MY_BLUETOOTH_ENABLE_REQUEST_ID:
+                switch (resultCode) {
+                    case Activity.RESULT_OK:
+                        createLocationRequest();
+                        buildLocationSettingsRequest();
+                        checkLocationSettings();
                         break;
                     case Activity.RESULT_CANCELED:
                         break;

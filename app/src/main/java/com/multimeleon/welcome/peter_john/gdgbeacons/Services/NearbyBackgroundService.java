@@ -17,6 +17,9 @@ public class NearbyBackgroundService extends IntentService {
 
     private static final int MESSAGES_NOTIFICATION_ID = 1;
 
+    public NearbyBackgroundService() {
+        super(NearbyBackgroundService.class.getName());
+    }
     public NearbyBackgroundService(String name) {
         super(name);
     }
